@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import logging
 import re
@@ -40,15 +41,26 @@ class LocalKnowledgeBase:
         settings = get_settings()
         processed_dir = Path(settings.data_processed_dir).resolve()
         entities_path = processed_dir / "entities.json"
+        entities_gz_path = processed_dir / "entities.json.gz"
         rels_path = processed_dir / "relationships.json"
+        rels_gz_path = processed_dir / "relationships.json.gz"
 
-        if not entities_path.exists():
+        # Support reading directly from .gz if plain .json is absent
+        if not entities_path.exists() and not entities_gz_path.exists():
             logger.warning("Local KB: entities.json not found at %s", entities_path)
             return False
 
-        logger.info("Loading local entities from %s...", entities_path)
+        if not entities_path.exists() and entities_gz_path.exists():
+            logger.info("Loading local entities from compressed %s...", entities_gz_path)
+        else:
+            logger.info("Loading local entities from %s...", entities_path)
+
         try:
-            entities = json.loads(entities_path.read_text(encoding="utf-8"))
+            if entities_path.exists():
+                entities = json.loads(entities_path.read_text(encoding="utf-8"))
+            else:
+                with gzip.open(entities_gz_path, "rt", encoding="utf-8") as f:
+                    entities = json.load(f)
             self.entities_by_id.clear()
             self.word_index.clear()
 
@@ -69,10 +81,16 @@ class LocalKnowledgeBase:
             logger.error("Failed to load entities.json: %s", ex)
             return False
 
-        if rels_path.exists():
-            logger.info("Loading local relationships from %s...", rels_path)
+        use_gz_rels = not rels_path.exists() and rels_gz_path.exists()
+        if rels_path.exists() or use_gz_rels:
+            src = rels_gz_path if use_gz_rels else rels_path
+            logger.info("Loading local relationships from %s...", src)
             try:
-                rels = json.loads(rels_path.read_text(encoding="utf-8"))
+                if use_gz_rels:
+                    with gzip.open(rels_gz_path, "rt", encoding="utf-8") as f:
+                        rels = json.load(f)
+                else:
+                    rels = json.loads(rels_path.read_text(encoding="utf-8"))
                 self.outgoing_rels.clear()
                 self.incoming_rels.clear()
 
