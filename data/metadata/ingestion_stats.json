@@ -1,0 +1,58 @@
+[
+  {
+    "dataset": "NVD",
+    "version": "2.0",
+    "filename": "nvdcve-2.0-2026.json",
+    "sha256": "a5c736606b337cb4f43c94b43c9c60d702bc8d0ffb55cc74fec163fbfa63e2f5",
+    "total_records": 61931,
+    "successful": 61931,
+    "failed": 0,
+    "skipped": 0,
+    "relationships_extracted": 67100,
+    "processing_time_seconds": 36.801,
+    "timestamp": "2026-10-08T09:42:59.340111",
+    "errors": []
+  },
+  {
+    "dataset": "CWE",
+    "version": "4.20",
+    "filename": "cwec_v4.20.xml",
+    "sha256": "1f5a78bd62e00f86436b4fe32d5034a57e8f0da88e4063b2072b664ae510912e",
+    "total_records": 969,
+    "successful": 969,
+    "failed": 0,
+    "skipped": 0,
+    "relationships_extracted": 1318,
+    "processing_time_seconds": 1.021,
+    "timestamp": "2026-10-08T09:43:00.646231",
+    "errors": []
+  },
+  {
+    "dataset": "CAPEC",
+    "version": "3.9",
+    "filename": "capec_v3.9.xml",
+    "sha256": "70279a2dff0cb0ad79e546adb07828335a704ad5210e047e09e986172fc9e34d",
+    "total_records": 615,
+    "successful": 615,
+    "failed": 0,
+    "skipped": 0,
+    "relationships_extracted": 2017,
+    "processing_time_seconds": 0.323,
+    "timestamp": "2026-10-08T09:43:01.139340",
+    "errors": []
+  },
+  {
+    "dataset": "ATTACK",
+    "version": "bundle--6198013c-6f02-42a4-9713-38ea1301a1aa",
+    "filename": "enterprise-attack-19.2.json",
+    "sha256": "dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4",
+    "total_records": 858,
+    "successful": 858,
+    "failed": 0,
+    "skipped": 0,
+    "relationships_extracted": 493,
+    "processing_time_seconds": 0.745,
+    "timestamp": "2026-10-08T09:43:01.890604",
+    "errors": []
+  }
+]

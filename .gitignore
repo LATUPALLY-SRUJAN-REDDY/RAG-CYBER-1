@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+backend/.venv/
+frontend/node_modules/
+
+data/raw/attack/enterprise-attack-19.2.json
+data/raw/nvd/nvdcve-2.0-2026.json
+data/processed/entities.json
+data/processed/relationships.json
