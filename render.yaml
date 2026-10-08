@@ -10,11 +10,11 @@ services:
         value: "3.10.0"
       - key: NODE_VERSION
         value: "20.15.0"
+      - key: CORS_ORIGINS
+        value: "https://graphcyrag-app.onrender.com"
       - key: NEO4J_URI
-        value: "bolt://your-neo4j-host:7687"
-      - key: NEO4J_USER
+        value: "bolt://localhost:7687"
+      - key: NEO4J_USERNAME
         value: "neo4j"
       - key: NEO4J_PASSWORD
-        value: "password"
-  - key: DEPLOY_STATUS
-    value: "in progress"
+        value: "changeme_neo4j_password"
