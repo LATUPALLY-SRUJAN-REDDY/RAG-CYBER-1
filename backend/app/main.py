@@ -68,7 +68,7 @@ app.include_router(graph.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api")
 
 
-@app.get("/")
+@app.get("/api")
 def root():
     return {
         "name": "GraphCyRAG API",
@@ -76,3 +76,27 @@ def root():
         "status": "operational",
         "docs_url": "/docs",
     }
+
+# Serve frontend static files
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist")
+if os.path.isdir(frontend_dist):
+    # Mount assets folder
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+    
+    # Catch-all route to serve index.html for client-side routing
+    @app.get("/{catchall:path}")
+    def serve_frontend(catchall: str):
+        if catchall.startswith("api/") or catchall == "api":
+            return {"detail": "Not Found"}
+        index_path = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        return {"detail": "Frontend not found"}
+else:
+    @app.get("/")
+    def root_fallback():
+        return {"detail": "Frontend build not found, please build the frontend first"}
