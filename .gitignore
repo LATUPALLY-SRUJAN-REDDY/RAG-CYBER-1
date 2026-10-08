@@ -9,3 +9,6 @@ data/raw/attack/enterprise-attack-19.2.json
 data/raw/nvd/nvdcve-2.0-2026.json
 data/processed/entities.json
 data/processed/relationships.json
+# .gz versions ARE tracked (compressed for git)
+# data/processed/entities.json.gz
+# data/processed/relationships.json.gz
