@@ -68,7 +68,7 @@ def get_neighborhood(node_id: str, limit: int = 25) -> GraphNeighborhood:
         except Exception as e:
             logger.warning("Neo4j neighborhood query failed: %s", e)
 
-    # Fast in-memory local KB fallback
+    # Fast local KB fallback
     kb = LocalKnowledgeBase.get_instance()
     primary = kb.get_entity(cleaned_id)
     if not primary:
@@ -79,31 +79,16 @@ def get_neighborhood(node_id: str, limit: int = 25) -> GraphNeighborhood:
     edges = []
     seen = {cleaned_id.upper()}
 
-    # Outgoing
-    for r in kb.outgoing_rels.get(cleaned_id.upper(), [])[:limit]:
-        tid = r.get("target_id", "").upper()
-        if tid and tid not in seen:
-            seen.add(tid)
-            target_ent = kb.get_entity(tid) or {"id": tid, "name": tid, "entity_type": "Entity"}
-            nodes.append(target_ent)
-        edges.append({
-            "source": r.get("source_id"),
-            "target": r.get("target_id"),
-            "type": r.get("relationship_type", "RELATED_TO"),
-        })
-
-    # Incoming
-    if len(edges) < limit:
-        for r in kb.incoming_rels.get(cleaned_id.upper(), [])[: (limit - len(edges))]:
-            sid = r.get("source_id", "").upper()
-            if sid and sid not in seen:
-                seen.add(sid)
-                src_ent = kb.get_entity(sid) or {"id": sid, "name": sid, "entity_type": "Entity"}
-                nodes.append(src_ent)
+    neighbors = kb.get_neighbors(cleaned_id, limit=limit)
+    for n in neighbors:
+        nid = n.get("id", "").upper()
+        if nid and nid not in seen:
+            seen.add(nid)
+            nodes.append(n)
             edges.append({
-                "source": r.get("source_id"),
-                "target": r.get("target_id"),
-                "type": r.get("relationship_type", "RELATED_TO"),
+                "source": cleaned_id,
+                "target": n.get("id"),
+                "type": n.get("relationship_type", "RELATED_TO"),
             })
 
     return GraphNeighborhood(center_node=center_node, nodes=nodes, edges=edges)
@@ -141,7 +126,7 @@ def get_sample_subgraph(limit: int = 40) -> dict[str, Any]:
         except Exception as e:
             logger.warning("Neo4j sample subgraph query failed: %s", e)
 
-    # High-speed in-memory sample from LocalKnowledgeBase
+    # High-speed local KB sample
     kb = LocalKnowledgeBase.get_instance()
     nodes_dict = {}
     edges = []
@@ -154,20 +139,16 @@ def get_sample_subgraph(limit: int = 40) -> dict[str, Any]:
         if ent:
             nodes_dict[ent["id"]] = ent
 
-        # Add relationships
-        for r in kb.outgoing_rels.get(sid, [])[:4]:
-            tid = r.get("target_id", "")
-            target_ent = kb.get_entity(tid)
-            if target_ent:
-                nodes_dict[target_ent["id"]] = target_ent
-                edges.append({"source": r.get("source_id"), "target": r.get("target_id"), "type": r.get("relationship_type")})
-
-        for r in kb.incoming_rels.get(sid, [])[:3]:
-            source_id = r.get("source_id", "")
-            src_ent = kb.get_entity(source_id)
-            if src_ent:
-                nodes_dict[src_ent["id"]] = src_ent
-                edges.append({"source": r.get("source_id"), "target": r.get("target_id"), "type": r.get("relationship_type")})
+        neighbors = kb.get_neighbors(sid, limit=4)
+        for n in neighbors:
+            nid = n.get("id")
+            if nid:
+                nodes_dict[nid] = n
+                edges.append({
+                    "source": sid,
+                    "target": nid,
+                    "type": n.get("relationship_type", "RELATED_TO"),
+                })
 
         if len(edges) >= limit:
             break
