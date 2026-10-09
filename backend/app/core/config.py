@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0")
     api_port: int = Field(default=8000)
     api_base_url: str = Field(default="http://localhost:8000")
-    cors_origins: str = Field(default="http://localhost:5173,http://localhost:3000")
+    cors_origins: str = Field(default="*")
 
     # ── Vector Index ───────────────────────────────────────────
     vector_index_name: str = Field(default="cybersecurity_embeddings")
