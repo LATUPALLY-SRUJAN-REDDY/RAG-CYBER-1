@@ -59,8 +59,24 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     def resolve_data_path(self, relative: str) -> Path:
-        """Return an absolute path resolved from the backend working directory."""
-        return Path(relative).resolve()
+        """Return an absolute path resolved robustly regardless of current working directory."""
+        p = Path(relative)
+        if p.exists():
+            return p.resolve()
+        
+        # Try relative to project root (4 levels up from this file: backend/app/core/config.py)
+        project_root = Path(__file__).resolve().parent.parent.parent.parent
+        rel_cleaned = relative.lstrip("./\\").replace("../", "").replace("..\\", "")
+        candidate = project_root / rel_cleaned
+        if candidate.exists():
+            return candidate.resolve()
+
+        # Try relative to CWD
+        cwd_candidate = Path.cwd() / rel_cleaned
+        if cwd_candidate.exists():
+            return cwd_candidate.resolve()
+
+        return p.resolve()
 
 
 @lru_cache

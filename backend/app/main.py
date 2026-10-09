@@ -54,7 +54,7 @@ if not origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins if "*" not in origins else ["*"],
-    allow_credentials=True,
+    allow_credentials="*" not in origins,  # Browsers reject credentials + wildcard
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -99,4 +99,10 @@ if os.path.isdir(frontend_dist):
 else:
     @app.get("/")
     def root_fallback():
-        return {"detail": "Frontend build not found, please build the frontend first"}
+        return {
+            "name": "GraphCyRAG API",
+            "version": "1.0.0",
+            "status": "operational",
+            "docs_url": "/docs",
+            "message": "Backend API is running. Point your frontend to this URL."
+        }

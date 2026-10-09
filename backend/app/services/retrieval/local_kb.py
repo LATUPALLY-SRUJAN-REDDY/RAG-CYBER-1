@@ -39,7 +39,7 @@ class LocalKnowledgeBase:
             return True
 
         settings = get_settings()
-        processed_dir = Path(settings.data_processed_dir).resolve()
+        processed_dir = settings.resolve_data_path(settings.data_processed_dir)
         entities_path = processed_dir / "entities.json"
         entities_gz_path = processed_dir / "entities.json.gz"
         rels_path = processed_dir / "relationships.json"

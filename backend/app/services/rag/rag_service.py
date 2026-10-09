@@ -38,10 +38,10 @@ async def check_ollama_health() -> str:
 
 
 async def generate_with_ollama(system_prompt: str, user_prompt: str) -> str:
-    """Call Ollama API for LLM generation with fast timeout."""
+    """Call Ollama API for LLM generation."""
     settings = get_settings()
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             payload = {
                 "model": settings.ollama_model,
                 "messages": [

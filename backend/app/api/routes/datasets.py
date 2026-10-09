@@ -26,8 +26,8 @@ class IngestRequest(BaseModel):
 def list_datasets() -> list[dict[str, Any]]:
     """Return status and metadata for all 4 raw datasets."""
     settings = get_settings()
-    raw_dir = Path(settings.data_raw_dir).resolve()
-    processed_dir = Path(settings.data_processed_dir).resolve()
+    raw_dir = settings.resolve_data_path(settings.data_raw_dir)
+    processed_dir = settings.resolve_data_path(settings.data_processed_dir)
 
     datasets = [
         {

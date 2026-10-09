@@ -7,6 +7,11 @@ import TelemetryView from './components/TelemetryView';
 import { Search, Network, Database, Activity } from 'lucide-react';
 import './App.css';
 
+// Backend API base URL — set VITE_API_URL in Vercel env vars to point to the Render backend
+// e.g. VITE_API_URL=https://graphcyrag-api.onrender.com
+// In local dev, leave empty — Vite proxy handles /api → localhost:8000
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('rag'); // 'rag' | 'graph' | 'datasets' | 'telemetry'
   const [health, setHealth] = useState({ status: 'degraded', neo4j: 'unavailable', ollama: 'unavailable' });
@@ -21,7 +26,7 @@ export default function App() {
     try {
       // 1. Health
       try {
-        const hRes = await fetch('/api/health');
+        const hRes = await fetch(`${API_BASE}/api/health`);
         if (hRes.ok) setHealth(await hRes.json());
       } catch (e) {
         console.warn("API health endpoint offline:", e);
@@ -29,7 +34,7 @@ export default function App() {
 
       // 2. Stats
       try {
-        const sRes = await fetch('/api/stats');
+        const sRes = await fetch(`${API_BASE}/api/stats`);
         if (sRes.ok) setStats(await sRes.json());
       } catch (e) {
         console.warn("API stats endpoint offline:", e);
@@ -37,7 +42,7 @@ export default function App() {
 
       // 3. Datasets
       try {
-        const dRes = await fetch('/api/datasets');
+        const dRes = await fetch(`${API_BASE}/api/datasets`);
         if (dRes.ok) setDatasets(await dRes.json());
       } catch (e) {
         console.warn("API datasets endpoint offline:", e);
@@ -45,7 +50,7 @@ export default function App() {
 
       // 4. Monitoring
       try {
-        const mRes = await fetch('/api/monitoring');
+        const mRes = await fetch(`${API_BASE}/api/monitoring`);
         if (mRes.ok) setMonitoring(await mRes.json());
       } catch (e) {
         console.warn("API monitoring endpoint offline:", e);
@@ -62,63 +67,35 @@ export default function App() {
   const handleExecuteQuery = async (queryPayload) => {
     setIsQuerying(true);
     try {
-      const res = await fetch('/api/query', {
+      const res = await fetch(`${API_BASE}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryPayload),
       });
       if (!res.ok) {
-        throw new Error(`Query failed with status ${res.status}`);
+        const errorText = await res.text().catch(() => '');
+        throw new Error(`Query failed (HTTP ${res.status}): ${errorText}`);
       }
       const data = await res.json();
       return data;
     } catch (err) {
-      // Return structured demo response if backend was temporarily unreachable
+      console.error("Query API error:", err);
+      // Show real error — NOT a hardcoded fake response
       return {
         question: queryPayload.question,
-        answer: `### Threat Intelligence Summary\n\nBased on canonical knowledge graph relationships extracted from **NVD CVE**, **MITRE CWE**, **CAPEC**, and **ATT&CK Enterprise**:\n\n- **Weakness Vector**: The targeted behavior maps to **CWE-89** (Improper Neutralization of Special Elements used in an SQL Command) allowing untrusted data to manipulate database queries.\n- **Attack Pattern**: Exploited via **CAPEC-66** (SQL Injection) and **CAPEC-108** (Command Line Execution through SQL injection).\n- **Adversary Technique**: Corresponds to MITRE ATT&CK technique **T1190** (Exploit Public-Facing Application) used by advanced threat groups to achieve initial access and database reconnaissance.\n- **Remediation**: Implement parameterized statements / stored procedures, input validation with strict allowlists, and least privilege database account configurations.`,
+        answer: `### ⚠️ Backend Connection Error\n\nUnable to reach the GraphCyRAG backend API.\n\n**Error**: ${err.message}\n\n**Possible Causes**:\n- The backend server may be starting up (Render free tier takes ~30s to wake)\n- The VITE_API_URL environment variable may not be set in Vercel\n- The backend URL may be incorrect\n\n**Try**: Wait 30 seconds and retry your question. If on Render free tier, the server needs time to spin up after inactivity.\n\nCurrent API target: \`${API_BASE || '(same origin — no VITE_API_URL set)'}\``,
         retrieval_mode: queryPayload.retrieval_mode,
-        citations: ["[CWE] CWE-89", "[CAPEC] CAPEC-66", "[ATTACK] T1190"],
-        performance: { total_ms: 24.5, retrieval_ms: 8.2, generation_ms: 12.1, validation_ms: 4.2 },
+        citations: [],
+        performance: { total_ms: 0, retrieval_ms: 0, generation_ms: 0, validation_ms: 0 },
         validation: {
-          status: "SUPPORTED",
-          groundedness: 1.0,
-          coverage: 0.95,
-          total_claims: 4,
-          supported_claims: [
-            "Behavior maps to CWE-89 allowing untrusted data to manipulate queries.",
-            "Exploited via CAPEC-66 (SQL Injection) and CAPEC-108.",
-            "Corresponds to MITRE ATT&CK technique T1190 (Exploit Public-Facing Application).",
-            "Remediation requires parameterized statements and least privilege."
-          ],
-          unsupported_claims: []
+          status: "NOT_VALIDATED",
+          groundedness: 0,
+          coverage: 0,
+          total_claims: 0,
+          supported_claims: [],
+          unsupported_claims: ["Could not validate — backend unreachable"]
         },
-        evidence: [
-          {
-            id: "CWE-89",
-            entity_type: "CWE",
-            source: "MITRE_CWE",
-            relevance_score: 0.98,
-            retrieval_method: "hybrid_graph",
-            description: "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')."
-          },
-          {
-            id: "CAPEC-66",
-            entity_type: "CAPEC",
-            source: "MITRE_CAPEC",
-            relevance_score: 0.94,
-            retrieval_method: "hybrid_both",
-            description: "An adversary injects SQL syntax into inputs destined for a database parser."
-          },
-          {
-            id: "T1190",
-            entity_type: "ATTACK",
-            source: "MITRE_ATTACK",
-            relevance_score: 0.89,
-            retrieval_method: "hybrid_semantic",
-            description: "Adversaries may attempt to exploit a weakness in an Internet-facing computer or program."
-          }
-        ]
+        evidence: []
       };
     } finally {
       setIsQuerying(false);
@@ -127,7 +104,7 @@ export default function App() {
 
   const handleFetchSampleGraph = async () => {
     try {
-      const res = await fetch('/api/graph/sample');
+      const res = await fetch(`${API_BASE}/api/graph/sample`);
       if (res.ok) return await res.json();
     } catch (e) {
       console.warn("Using sample fallback graph:", e);
@@ -158,7 +135,7 @@ export default function App() {
 
   const handleFetchNeighborhood = async (nodeId) => {
     try {
-      const res = await fetch(`/api/graph/neighborhood/${encodeURIComponent(nodeId)}`);
+      const res = await fetch(`${API_BASE}/api/graph/neighborhood/${encodeURIComponent(nodeId)}`);
       if (res.ok) return await res.json();
     } catch (e) {
       console.warn("Failed to fetch neighborhood:", e);
@@ -167,7 +144,7 @@ export default function App() {
   };
 
   const handleTriggerIngest = async (datasetId) => {
-    const res = await fetch('/api/datasets/ingest', {
+    const res = await fetch(`${API_BASE}/api/datasets/ingest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dataset: datasetId, populate_graph: true, generate_embeddings: false }),

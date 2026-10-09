@@ -26,9 +26,9 @@ class IngestionOrchestrator:
 
     def __init__(self) -> None:
         settings = get_settings()
-        self.raw_dir = Path(settings.data_raw_dir).resolve()
-        self.processed_dir = Path(settings.data_processed_dir).resolve()
-        self.metadata_dir = Path(settings.data_metadata_dir).resolve()
+        self.raw_dir = settings.resolve_data_path(settings.data_raw_dir)
+        self.processed_dir = settings.resolve_data_path(settings.data_processed_dir)
+        self.metadata_dir = settings.resolve_data_path(settings.data_metadata_dir)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         self.metadata_dir.mkdir(parents=True, exist_ok=True)
 

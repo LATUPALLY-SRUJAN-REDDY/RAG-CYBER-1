@@ -1,20 +1,20 @@
 services:
   - type: web
-    name: graphcyrag-app
+    name: graphcyrag-api
     env: python
     plan: free
-    buildCommand: "cd frontend && rm -rf package-lock.json node_modules && npm install && npm install -f @rolldown/binding-linux-x64-gnu && npm run build && cd ../backend && pip install -r requirements.txt"
+    buildCommand: "cd backend && pip install -r requirements.txt"
     startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: "3.10.0"
-      - key: NODE_VERSION
-        value: "20.15.0"
       - key: CORS_ORIGINS
-        value: "https://graphcyrag-app.onrender.com"
+        value: "*"
       - key: NEO4J_URI
         value: "bolt://localhost:7687"
       - key: NEO4J_USERNAME
         value: "neo4j"
       - key: NEO4J_PASSWORD
         value: "changeme_neo4j_password"
+      - key: DATA_PROCESSED_DIR
+        value: "../data/processed"
