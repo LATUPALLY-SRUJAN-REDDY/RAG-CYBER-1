@@ -49,7 +49,11 @@ def format_evidence_for_prompt(evidence: list[dict]) -> str:
         name = e.get("name", "")
         desc = (e.get("description", "") or "")[:800]
         source = e.get("source", "")
-        score = e.get("relevance_score", 0)
+        raw_score = e.get("relevance_score", 0)
+        try:
+            score = float(raw_score) if raw_score is not None else 0.0
+        except (ValueError, TypeError):
+            score = 0.0
         method = e.get("retrieval_method", "")
 
         entry = f"[Evidence {i}] {etype} {eid}"

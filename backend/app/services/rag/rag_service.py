@@ -74,14 +74,19 @@ def _build_evidence_items(results: list[dict[str, Any]]) -> list[EvidenceItem]:
     for r in results:
         eid = r.get("id", "")
         etype = r.get("entity_type", "")
+        raw_score = r.get("relevance_score", 0)
+        try:
+            score = round(float(raw_score), 4) if raw_score is not None else 0.0
+        except (ValueError, TypeError):
+            score = 0.0
         items.append(EvidenceItem(
             id=eid,
             entity_type=etype,
-            source=r.get("source", ""),
+            source=r.get("source", "") or "",
             description=(r.get("description", "") or "")[:500],
-            relevance_score=round(r.get("relevance_score", 0), 4),
-            retrieval_method=r.get("retrieval_method", ""),
-            citation=f"[{etype}] {eid}",
+            relevance_score=score,
+            retrieval_method=r.get("retrieval_method", "") or "",
+            citation=f"[{etype}] {eid}" if etype else f"[{eid}]",
         ))
     return items
 
