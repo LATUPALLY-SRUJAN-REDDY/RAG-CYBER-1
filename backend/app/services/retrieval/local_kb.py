@@ -56,11 +56,12 @@ class LocalKnowledgeBase:
             logger.info("Loading local entities from %s...", entities_path)
 
         try:
-            if entities_path.exists():
-                entities = json.loads(entities_path.read_text(encoding="utf-8"))
-            else:
+            if entities_gz_path.exists():
                 with gzip.open(entities_gz_path, "rt", encoding="utf-8") as f:
                     entities = json.load(f)
+            else:
+                entities = json.loads(entities_path.read_text(encoding="utf-8"))
+
             self.entities_by_id.clear()
             self.word_index.clear()
 
@@ -68,17 +69,31 @@ class LocalKnowledgeBase:
                 eid = str(e.get("id", "")).strip().upper()
                 if not eid:
                     continue
-                self.entities_by_id[eid] = e
 
-                # Index words in id, name, and description for keyword search
-                text = f"{eid} {e.get('name', '')} {e.get('description', '')[:500]}"
+                self.entities_by_id[eid] = {
+                    "id": eid,
+                    "entity_type": e.get("entity_type", ""),
+                    "name": str(e.get("name", "") or "")[:120],
+                    "description": str(e.get("description", "") or "")[:500],
+                    "source": e.get("source", ""),
+                    "likelihood_of_exploit": e.get("likelihood_of_exploit", ""),
+                    "common_consequences": e.get("common_consequences", [])[:3] if isinstance(e.get("common_consequences"), list) else [],
+                    "mitigations": e.get("mitigations", [])[:3] if isinstance(e.get("mitigations"), list) else [],
+                }
+
+                # Index words in ID, name, and first 100 chars of description
+                text = f"{eid} {e.get('name', '')} {str(e.get('description', ''))[:100]}"
                 tokens = re.findall(r"\b[a-zA-Z0-9_\-]{3,}\b", text.lower())
                 for t in set(tokens):
                     self.word_index[t].add(eid)
 
-            logger.info("Loaded %d entities into local KB index", len(self.entities_by_id))
+            del entities
+            import gc
+            gc.collect()
+
+            logger.info("Loaded %d entities into local KB index (compact memory mode)", len(self.entities_by_id))
         except Exception as ex:
-            logger.error("Failed to load entities.json: %s", ex)
+            logger.error("Failed to load entities: %s", ex)
             return False
 
         use_gz_rels = not rels_path.exists() and rels_gz_path.exists()
@@ -98,12 +113,20 @@ class LocalKnowledgeBase:
                     sid = str(r.get("source_id", "")).strip().upper()
                     tid = str(r.get("target_id", "")).strip().upper()
                     if sid and tid:
-                        self.outgoing_rels[sid].append(r)
-                        self.incoming_rels[tid].append(r)
+                        slim_r = {
+                            "source_id": sid,
+                            "target_id": tid,
+                            "relationship_type": r.get("relationship_type", ""),
+                        }
+                        self.outgoing_rels[sid].append(slim_r)
+                        self.incoming_rels[tid].append(slim_r)
 
-                logger.info("Loaded %d relationships into local KB index", len(rels))
+                del rels
+                gc.collect()
+
+                logger.info("Loaded relationships into local KB index")
             except Exception as ex:
-                logger.error("Failed to load relationships.json: %s", ex)
+                logger.error("Failed to load relationships: %s", ex)
 
         self.loaded = True
         return True
